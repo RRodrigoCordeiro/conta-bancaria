@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import br.com.pactomais.contabancaria.model.Conta;
 import br.com.pactomais.contabancaria.model.ContaCorrente;
 import br.com.pactomais.contabancaria.model.ContaPoupanca;
+import br.com.pactomais.contabancaria.model.Transacao;
 import br.com.pactomais.contabancaria.service.ContaService;
 
 @RestController
@@ -37,5 +38,17 @@ public class ContaController {
     @GetMapping("/{id}")
     public Conta buscarPorId(@PathVariable Long id) {
         return contaService.buscarPorId(id);
+    }
+
+    @PostMapping("/{id}/depositos")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Transacao depositar(@PathVariable Long id, @RequestBody Transacao transacao) {
+        return contaService.depositar(id, transacao.getValor());
+    }
+
+    @PostMapping("/{id}/saques")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Transacao sacar(@PathVariable Long id, @RequestBody Transacao transacao) {
+        return contaService.sacar(id, transacao.getValor());
     }
 }
