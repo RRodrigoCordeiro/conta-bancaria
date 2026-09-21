@@ -1,6 +1,7 @@
 package br.com.pactomais.contabancaria.model;
 
 import java.math.BigDecimal;
+import br.com.pactomais.contabancaria.exception.SaldoInsuficienteException;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -54,5 +55,16 @@ public abstract class Conta {
 
     public void setCorrentista(Correntista correntista) {
         this.correntista = correntista;
+    }
+
+    public void depositar(BigDecimal valor) {
+        this.saldo = this.saldo.add(valor);
+    }
+
+    public void sacar(BigDecimal valor) {
+        if (valor.compareTo(this.saldo) > 0) {
+            throw new SaldoInsuficienteException("Saldo insuficiente");
+        }
+        this.saldo = this.saldo.subtract(valor);
     }
 }
