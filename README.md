@@ -1,6 +1,6 @@
 # Conta Bancária — API REST
 
-API RESTful para gerenciamento de contas bancárias de uma cooperativa de crédito, desenvolvida como desafio técnico para a vaga de Estágio em Desenvolvimento Back-End da Pacto Mais.
+RESTful para gerenciamento de contas bancárias de uma cooperativa de crédito. O sistema permite cadastrar correntistas, abrir contas corrente e poupança, realizar depósitos e saques respeitando as regras de cada tipo de conta, e consultar o extrato das transações realizadas.
 
 ## Tecnologias
 
@@ -9,6 +9,7 @@ API RESTful para gerenciamento de contas bancárias de uma cooperativa de crédi
 - Spring Data JPA / Hibernate
 - Banco de dados H2 (em memória)
 - Maven
+- Swagger / OpenAPI (springdoc)
 
 ## Como rodar o projeto localmente
 
@@ -29,11 +30,11 @@ API RESTful para gerenciamento de contas bancárias de uma cooperativa de crédi
 ```
    ./mvnw spring-boot:run
 ```
-   No Windows: `mvnw.cmd spring-boot:run`
+No Windows: `mvnw.cmd spring-boot:run`
 
-   Ou, se tiver o Maven instalado: `mvn spring-boot:run`
+Ou, se tiver o Maven instalado: `mvn spring-boot:run`
 
-   Também é possível abrir o projeto em uma IDE (como o IntelliJ), importar como projeto Maven e rodar a classe `ContaBancariaApplication`.
+Também é possível abrir o projeto em uma IDE (como o IntelliJ), importar como projeto Maven e rodar a classe `ContaBancariaApplication`.
 
 3. A aplicação sobe em `http://localhost:8080`.
 
@@ -48,9 +49,23 @@ Para visualizar as tabelas e os dados:
 - User Name: `sa`
 - Password: (deixe em branco)
 
+### Documentação interativa (Swagger)
+
+Com a aplicação rodando, acesse:
+
+```
+http://localhost:8080/swagger-ui.html
+```
+
+Lá é possível ver e testar todos os endpoints diretamente pelo navegador, sem precisar de Postman ou Insomnia.
+
+## Modelagem de dados
+
+![Modelagem de dados](docs/modelagemBanco.png)
+
 ## Script SQL de criação do banco
 
-As tabelas são criadas automaticamente pelo Hibernate (`spring.jpa.hibernate.ddl-auto=update`), com base nas entidades. O script equivalente é:
+Não há um arquivo `schema.sql` no projeto. As tabelas são geradas automaticamente pelo Hibernate ao iniciar a aplicação (configuração `spring.jpa.hibernate.ddl-auto=update`, no `application.properties`), com base nas entidades JPA (`@Entity`). O script SQL equivalente ao que o Hibernate gera é:
 
 ```sql
 create table correntista (
@@ -199,7 +214,24 @@ Regras de saque:
 ```
 GET /contas/{id}/extrato
 ```
-Resposta (200 OK): lista de transações (depósitos e saques) daquela conta, ou 404 Not Found se a conta não existir.
+Resposta (200 OK):
+```json
+[
+  {
+    "id": 1,
+    "tipo": "DEPOSITO",
+    "valor": 100.00,
+    "data": "2026-09-22T16:36:51.868"
+  },
+  {
+    "id": 2,
+    "tipo": "SAQUE",
+    "valor": 50.00,
+    "data": "2026-09-22T16:36:54.448"
+  }
+]
+```
+Retorna 404 Not Found se a conta não existir.
 
 ## O que foi feito
 
@@ -207,16 +239,16 @@ Resposta (200 OK): lista de transações (depósitos e saques) daquela conta, ou
 - Abertura e consulta de contas corrente e poupança, com herança entre `Conta`, `ContaCorrente` e `ContaPoupanca`.
 - Depósito e saque, com as regras de limite (conta corrente) e saldo (conta poupança).
 - Registro de cada depósito e saque como uma `Transacao`.
-- Extrato (listagem de transações) de uma conta.
-- Tratamento de erros: 404 quando um correntista ou conta não é encontrado, e 422 quando o saldo é insuficiente para o saque.
+- Extrato (listagem de transações) de uma conta, com um DTO de resposta (`TransacaoResponse`) para evitar repetição de dados da conta e do correntista em cada item.
+- Tratamento de erros: 404 quando um correntista ou conta não é encontrado, e 422 quando o saldo é insuficiente para o saque (diferencial do desafio).
+- Documentação interativa da API com Swagger/OpenAPI, acessível em `/swagger-ui.html` (diferencial do desafio).
 - Uso de `BigDecimal` para valores monetários, evitando os problemas de arredondamento do `double`.
 
 ## O que ficou de fora e por quê
 
 - **Rendimento da poupança e juros da conta corrente** (diferenciais opcionais): não implementados por priorizar o escopo obrigatório dentro do prazo. A implementação seguiria o mesmo padrão do depósito e saque: um endpoint que recebe a taxa como parâmetro, calcula o valor sobre o saldo, atualiza o saldo e registra uma nova `Transacao`.
 - **Testes unitários**: não implementados por priorização de tempo. Seriam escritos com JUnit e Mockito, cobrindo principalmente as regras de saque (saldo suficiente/insuficiente em cada tipo de conta) e o cálculo de depósito.
-- **Documentação com Swagger/OpenAPI**: não implementada. A biblioteca `springdoc-openapi-ui` poderia ser adicionada ao `pom.xml` para gerar a documentação automaticamente a partir dos controllers.
-- **DTOs de resposta**: os endpoints retornam as próprias entidades JPA. Isso significa que o extrato, por exemplo, retorna a `Conta` (e o `Correntista`) dentro de cada `Transacao`, repetindo dados. A melhoria seria criar DTOs de resposta simplificados (ex.: `TransacaoResponse` só com id, tipo, valor e data).
+- **DTOs de requisição/resposta nos demais endpoints**: implementei um DTO de resposta apenas para o extrato (`TransacaoResponse`), que era onde havia repetição real de dados (a `Conta` e o `Correntista` inteiros dentro de cada transação). Os demais endpoints (cadastro, abertura de conta, depósito, saque) continuam recebendo e retornando as entidades JPA diretamente, por simplicidade, já que não apresentam o mesmo problema.
 - **Validação de valores**: não há validação explícita contra valores negativos ou zero em depósitos e saques.
 - **Número de conta único**: o campo `numero` da conta não possui restrição de unicidade no banco.
 
@@ -225,3 +257,8 @@ Resposta (200 OK): lista de transações (depósitos e saques) daquela conta, ou
 - Utilizei herança JPA com estratégia `JOINED` para `Conta`, `ContaCorrente` e `ContaPoupanca`: os dados comuns ficam na tabela `conta`, e os específicos de cada tipo (como o `limite` da conta corrente) ficam em tabelas próprias, evitando colunas nulas.
 - As regras de saque estão na própria entidade (`Conta.sacar()`, sobrescrito em `ContaCorrente`), usando polimorfismo em vez de verificações de tipo (`if`/`instanceof`) no service.
 - Criei um endpoint de abertura de conta para cada tipo (`/contas/corrente/{id}` e `/contas/poupanca/{id}`), já que `Conta` é abstrata e cada tipo tem campos próprios de entrada.
+- Usei H2 em memória em vez de MySQL para facilitar a execução do projeto por quem for avaliar, já que não exige instalação e configuração prévia de um banco externo. A troca para MySQL exigiria apenas alterar a dependência no `pom.xml` e a configuração de conexão no `application.properties`, sem alterar o código de acesso a dados (JPA/Hibernate).
+
+## Vídeo de demonstração
+
+[Video de demostração da API ](https://youtu.be/Jsbawj87HR4)
