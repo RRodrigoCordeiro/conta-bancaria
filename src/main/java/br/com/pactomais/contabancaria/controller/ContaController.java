@@ -1,5 +1,7 @@
 package br.com.pactomais.contabancaria.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,5 +52,10 @@ public class ContaController {
     @ResponseStatus(HttpStatus.CREATED)
     public Transacao sacar(@PathVariable Long id, @RequestBody Transacao transacao) {
         return contaService.sacar(id, transacao.getValor());
+    }
+
+    @GetMapping("/{id}/extrato")
+    public List<Transacao> extrato(@PathVariable Long id) {
+        return contaService.extrato(id);
     }
 }
