@@ -3,10 +3,8 @@ package br.com.pactomais.contabancaria.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import br.com.pactomais.contabancaria.exception.RecursoNaoEncontradoException;
 import br.com.pactomais.contabancaria.model.Conta;
 import br.com.pactomais.contabancaria.model.ContaCorrente;
@@ -16,6 +14,8 @@ import br.com.pactomais.contabancaria.model.TipoTransacao;
 import br.com.pactomais.contabancaria.model.Transacao;
 import br.com.pactomais.contabancaria.repository.ContaRepository;
 import br.com.pactomais.contabancaria.repository.TransacaoRepository;
+import java.util.ArrayList;
+import br.com.pactomais.contabancaria.dto.TransacaoResponse;
 
 @Service
 public class ContaService {
@@ -78,8 +78,14 @@ public class ContaService {
         return transacaoRepository.save(transacao);
     }
 
-    public List<Transacao> extrato(Long contaId) {
+    public List<TransacaoResponse> extrato(Long contaId) {
         buscarPorId(contaId);
-        return transacaoRepository.findByContaId(contaId);
+        List<Transacao> transacoes = transacaoRepository.findByContaId(contaId);
+
+        List<TransacaoResponse> resposta = new ArrayList<>();
+        for (Transacao transacao : transacoes) {
+            resposta.add(new TransacaoResponse(transacao));
+        }
+        return resposta;
     }
 }

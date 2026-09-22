@@ -1,7 +1,6 @@
 package br.com.pactomais.contabancaria.controller;
 
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,12 +10,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
 import br.com.pactomais.contabancaria.model.Conta;
 import br.com.pactomais.contabancaria.model.ContaCorrente;
 import br.com.pactomais.contabancaria.model.ContaPoupanca;
 import br.com.pactomais.contabancaria.model.Transacao;
 import br.com.pactomais.contabancaria.service.ContaService;
+import br.com.pactomais.contabancaria.dto.TransacaoResponse;
+
 
 @RestController
 @RequestMapping("/contas")
@@ -55,7 +55,7 @@ public class ContaController {
     }
 
     @GetMapping("/{id}/extrato")
-    public List<Transacao> extrato(@PathVariable Long id) {
+    public List<TransacaoResponse> extrato(@PathVariable Long id) {
         return contaService.extrato(id);
     }
 }
